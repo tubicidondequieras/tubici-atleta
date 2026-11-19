@@ -1,0 +1,312 @@
+/*
+ * Tu Bici · página del atleta. Móvil primero, una columna, sin fuentes externas.
+ * Lo único llamativo es el dorsal con el número; todo lo demás es sobrio.
+ * Contraste (AA): tinta/fondo 13,8:1 · texto secundario/fondo 6,2:1 · blanco/botón 6,0:1 ·
+ * bordes de controles/blanco ≥ 3:1 (WCAG 1.4.11).
+ */
+/*
+ * Barlow Condensed Bold (SIL OFL 1.1, ver fuentes/OFL.txt), recortada a los dígitos 0-9 (5,6 KB).
+ * Va en la misma carpeta: no se carga nada de terceros. Solo la usa el número del dorsal.
+ */
+@font-face {
+  font-family: "TuBici Dorsal";
+  src: url("fuentes/barlow-condensed-bold-digitos.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039;
+}
+
+:root {
+  --noche: #0B2545;        /* azul Tu Bici: texto y barra */
+  --bruma: #EEF3F8;        /* fondo: brisa de Cartagena */
+  --papel: #FFFFFF;
+  --naranja: #F77F00;      /* solo decorativo (franja del dorsal) */
+  --naranja-tinta: #A14A00;/* botones y foco: AA con blanco */
+  --gris: #4A5B70;         /* texto secundario */
+  --linea: #C9D4E0;        /* solo separadores decorativos */
+  --borde-control: #7A8BA0;/* bordes de controles: 3,5:1 sobre blanco */
+  --exito: #1B7F3B;
+  --error: #B3261E;
+
+  --cuerpo: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Condensada de sistema para el número, como en un dorsal impreso. */
+  --dorsal: "TuBici Dorsal", "Bahnschrift", "DIN Alternate", "DIN Condensed", "Roboto Condensed", "Arial Narrow", sans-serif-condensed, var(--cuerpo);
+
+  --radio: 10px;
+  --toque: 44px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bruma);
+  color: var(--noche);
+  font: 1rem/1.5 var(--cuerpo);
+}
+
+/* ---------------------------------------------------------------- Barra */
+
+.barra {
+  background: var(--noche);
+  color: var(--papel);
+  padding: 0.75rem 1rem;
+}
+.marca {
+  margin: 0 auto;
+  max-width: 34rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+.marca-nombre { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.01em; }
+.marca-evento { font-size: 0.875rem; color: #C9D8EC; } /* 9,6:1 sobre la barra */
+
+/* ---------------------------------------------------------------- Contenido */
+
+.contenido {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+  outline: none;
+}
+
+h1, h2 { line-height: 1.2; margin: 0 0 0.5rem; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.125rem; }
+
+.nota { color: var(--gris); font-size: 0.9375rem; margin: 0 0 0.75rem; }
+
+.sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+:focus-visible { outline: 3px solid var(--naranja-tinta); outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- Estados simples */
+
+.estado { padding: 2.5rem 0 1rem; }
+.estado p { color: var(--gris); max-width: 32ch; }
+
+.girando {
+  width: 36px; height: 36px; margin-bottom: 1rem;
+  border: 4px solid var(--linea); border-top-color: var(--naranja-tinta);
+  border-radius: 50%;
+  animation: girar 0.9s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* ---------------------------------------------------------------- Dorsal */
+
+.dorsal {
+  position: relative;
+  /* Las cuatro perforaciones de los imperdibles, como en un dorsal de carrera. */
+  --hueco: radial-gradient(circle, var(--bruma) 0 5px, #B8C6D6 5.5px 6.5px, transparent 7px);
+  background:
+    var(--hueco) 12px 20px / 14px 14px no-repeat,
+    var(--hueco) calc(100% - 12px) 20px / 14px 14px no-repeat,
+    var(--hueco) 12px calc(100% - 12px) / 14px 14px no-repeat,
+    var(--hueco) calc(100% - 12px) calc(100% - 12px) / 14px 14px no-repeat,
+    var(--papel);
+  border-radius: 6px;
+  padding: 2rem 1.5rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 0 var(--linea), 0 8px 24px -12px rgba(11, 37, 69, 0.35);
+  overflow: hidden;
+}
+.dorsal-franja {
+  position: absolute; inset: 0 0 auto 0; height: 10px;
+  background: var(--naranja);
+}
+.dorsal-nombre {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 1.25rem 0.25rem;
+  text-align: center;
+}
+.dorsal-numero {
+  margin: 0;
+  text-align: center;
+  font-family: var(--dorsal);
+  font-stretch: condensed;
+  font-weight: 700;
+  /* Grande, pero sin salirse del dorsal: cada dígito mide ~0,5 em y el número llega a 5 dígitos.
+     El ancho útil es la columna (máx. 34rem) menos los rellenos de la página y del dorsal. */
+  font-size: min(clamp(6.5rem, 42vw, 11rem), calc((min(100vw, 34rem) - 5.5rem) / (var(--digitos, 3) * 0.5)));
+  line-height: 0.9;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.dorsal-pie {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--linea);
+  text-align: center;
+  color: var(--gris);
+  font-size: 0.9375rem;
+}
+
+/* ---------------------------------------------------------------- Bloques */
+
+.bloque { margin-top: 1.75rem; }
+
+.datos {
+  margin: 0;
+  background: var(--papel);
+  border-radius: var(--radio);
+  padding: 0.25rem 1rem;
+}
+.datos dt { color: var(--gris); font-size: 0.875rem; padding-top: 0.625rem; }
+.datos dd { margin: 0; padding-bottom: 0.625rem; border-bottom: 1px solid var(--bruma); overflow-wrap: anywhere; }
+.datos dd:last-of-type { border-bottom: 0; }
+
+@media (min-width: 30rem) {
+  .datos { display: grid; grid-template-columns: 9.5rem 1fr; column-gap: 1rem; }
+  .datos dt, .datos dd { padding: 0.625rem 0; border-bottom: 1px solid var(--bruma); }
+  .datos dt:last-of-type, .datos dd:last-of-type { border-bottom: 0; }
+}
+
+.comentarios {
+  margin: 0;
+  background: var(--papel);
+  border-left: 4px solid var(--naranja-tinta);
+  border-radius: 0 var(--radio) var(--radio) 0;
+  padding: 0.75rem 1rem;
+  white-space: pre-line;
+}
+
+/* ---------------------------------------------------------------- Fotos */
+
+.fotos {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;
+}
+.foto {
+  display: block; width: 100%;
+  aspect-ratio: 3 / 4;
+  min-height: var(--toque);
+  padding: 0; border: 0; border-radius: 6px;
+  background: linear-gradient(110deg, #DDE5EE 30%, #E9EFF5 50%, #DDE5EE 70%) 0 0 / 300% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+  overflow: hidden; cursor: pointer;
+  color: var(--gris); font: inherit; font-size: 0.875rem;
+}
+.foto.lista, .foto.fallida { animation: none; background: var(--papel); }
+.foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@keyframes brillo { to { background-position: -150% 0; } }
+
+.visor {
+  border: 0; padding: 0.75rem; background: var(--noche);
+  max-width: min(96vw, 48rem); max-height: 96vh;
+}
+.visor::backdrop { background: rgba(11, 37, 69, 0.85); }
+.visor img { display: block; max-width: 100%; max-height: calc(96vh - 5rem); margin: 0 auto 0.75rem; }
+
+/* ---------------------------------------------------------------- Términos */
+
+.terminos {
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.875rem 1rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  white-space: pre-line;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------- Formulario */
+
+.formulario { background: var(--papel); border-radius: var(--radio); padding: 1.25rem 1rem; }
+
+.casilla {
+  display: flex; align-items: center; gap: 0.75rem;
+  min-height: var(--toque);
+  padding: 0.5rem 0.75rem; margin: 0 -0.75rem;
+  border-radius: 8px;
+}
+.casilla label { font-weight: 600; cursor: pointer; flex: 1; padding: 0.5rem 0; }
+
+input[type="checkbox"], input[type="radio"] {
+  width: 26px; height: 26px; margin: 0; flex: none;
+  accent-color: var(--naranja-tinta);
+  cursor: pointer;
+}
+
+.pregunta { border: 0; margin: 1.25rem 0 0; padding: 0; min-width: 0; }
+.pregunta legend { font-weight: 600; padding: 0; margin-bottom: 0.5rem; }
+.opciones { display: flex; gap: 0.75rem; }
+.opcion {
+  flex: 1;
+  display: flex; align-items: center; gap: 0.625rem;
+  min-height: 48px;
+  padding: 0 1rem;
+  border: 2px solid var(--borde-control);
+  border-radius: var(--radio);
+  cursor: pointer;
+  font-weight: 600;
+}
+.opcion:has(input:checked) { border-color: var(--naranja-tinta); background: #FFF4EA; }
+.opcion:has(input:focus-visible) { outline: 3px solid var(--naranja-tinta); outline-offset: 2px; }
+
+.con-error .opcion { border-color: var(--error); }
+.casilla.con-error { background: #FCEDEC; }
+.error { color: var(--error); font-size: 0.9375rem; margin: 0.375rem 0 0; font-weight: 600; }
+.error-envio { margin-top: 1rem; }
+
+.boton {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 52px; min-width: var(--toque);
+  margin-top: 1.5rem; padding: 0 1.5rem;
+  width: 100%;
+  border: 0; border-radius: var(--radio);
+  background: var(--naranja-tinta); color: var(--papel);
+  font: inherit; font-weight: 700; font-size: 1.0625rem;
+  cursor: pointer;
+}
+.boton:hover { background: #8A3F00; }
+.boton:disabled { background: var(--gris); cursor: progress; }
+.boton-claro { background: var(--papel); color: var(--noche); margin-top: 0; }
+.boton-claro:hover { background: var(--bruma); }
+
+/* ---------------------------------------------------------------- Aceptado y gracias */
+
+.aceptado { background: var(--papel); border-radius: var(--radio); padding: 1.25rem 1rem; }
+.aceptado-fecha { color: var(--exito); font-weight: 600; margin: 0 0 0.75rem; }
+.respuestas { margin: 0; }
+.respuestas dt { padding-top: 0.75rem; }
+.respuestas dd {
+  margin: 0.25rem 0 0; padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--bruma);
+  font-weight: 700;
+}
+.respuestas dd:last-of-type { border-bottom: 0; }
+
+.gracias {
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--noche); color: var(--papel);
+  border-radius: var(--radio);
+  outline: none;
+}
+.gracias-icono { width: 56px; height: 56px; margin-bottom: 0.75rem; }
+.gracias-icono circle { fill: none; stroke: var(--naranja); stroke-width: 3; }
+.gracias-icono path {
+  fill: none; stroke: var(--papel); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 40; stroke-dashoffset: 40;
+  animation: trazo 0.5s 0.15s ease-out forwards;
+}
+.gracias-texto { margin: 0; font-size: 1.25rem; font-weight: 700; line-height: 1.35; }
+@keyframes trazo { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  .gracias-icono path { stroke-dashoffset: 0; }
+}

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <!-- Solo se habla con Apps Script; nada de terceros (ni fuentes, ni analítica). -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#0B2545">
+  <title>Tu registro · Tu Bici</title>
+  <link rel="icon" href="data:,">
+  <!-- ?v=N: súbelo al cambiar estos archivos para que los navegadores no usen la versión en caché. -->
+  <link rel="stylesheet" href="styles.css?v=3">
+  <script src="config.js?v=3" defer></script>
+  <script src="app.js?v=3" defer></script>
+</head>
+<body>
+  <header class="barra">
+    <p class="marca"><span class="marca-nombre">Tu Bici</span> <span class="marca-evento">Ironman 70.3 Cartagena</span></p>
+  </header>
+
+  <main id="contenido" class="contenido" tabindex="-1" aria-live="polite" aria-busy="true">
+    <!-- Cargando (estado inicial; app.js lo reemplaza) -->
+    <section class="estado" id="estado-cargando">
+      <div class="girando" aria-hidden="true"></div>
+      <p>Cargando tu registro…</p>
+    </section>
+  </main>
+
+  <!-- Plantillas: app.js las clona y llena con textContent (nunca HTML del servidor). -->
+
+  <template id="t-no-valido">
+    <section class="estado">
+      <h1>Link no válido</h1>
+      <p>Abre el link completo que te enviamos por WhatsApp. Si el problema sigue, escríbenos por el mismo chat.</p>
+    </section>
+  </template>
+
+  <template id="t-error-red">
+    <section class="estado">
+      <h1>No pudimos cargar tu registro</h1>
+      <p>Revisa tu conexión a internet y vuelve a intentarlo.</p>
+      <button type="button" class="boton" data-accion="reintentar">Reintentar</button>
+    </section>
+  </template>
+
+  <template id="t-registro">
+    <article class="registro">
+      <section class="dorsal" aria-labelledby="dorsal-titulo">
+        <div class="dorsal-franja" aria-hidden="true"></div>
+        <h1 id="dorsal-titulo" class="dorsal-nombre" data-campo="nombre"></h1>
+        <p class="dorsal-numero"><span class="sr">Número de tu bicicleta: </span><span data-campo="numero"></span></p>
+        <p class="dorsal-pie">Recibimos tu bicicleta en Bogotá el <time data-campo="fechaRecepcion"></time>.</p>
+      </section>
+
+      <section class="bloque" aria-labelledby="h-bici">
+        <h2 id="h-bici">Tu bicicleta</h2>
+        <dl class="datos" data-lista="bici"></dl>
+      </section>
+
+      <section class="bloque" aria-labelledby="h-datos">
+        <h2 id="h-datos">Tus datos</h2>
+        <dl class="datos" data-lista="persona"></dl>
+      </section>
+
+      <section class="bloque" aria-labelledby="h-fotos" data-si="fotos">
+        <h2 id="h-fotos">Fotos de la recepción</h2>
+        <p class="nota">Cada foto lleva impreso el número y el consecutivo. Tócala para verla grande.</p>
+        <ul class="fotos" data-lista="fotos"></ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="h-comentarios" data-si="comentarios">
+        <h2 id="h-comentarios">Comentarios del operador</h2>
+        <p class="comentarios" data-campo="comentarios"></p>
+      </section>
+
+      <section class="bloque" aria-labelledby="h-terminos">
+        <h2 id="h-terminos">Términos y condiciones</h2>
+        <div class="terminos" data-campo="terminos" tabindex="0" role="region" aria-label="Texto de los términos y condiciones"></div>
+      </section>
+
+      <section class="bloque" data-zona="respuesta"></section>
+    </article>
+  </template>
+
+  <template id="t-formulario">
+    <form class="formulario" novalidate>
+      <h2>Tu aceptación</h2>
+      <p class="nota">Todas las respuestas son obligatorias. Solo se puede enviar una vez.</p>
+
+      <div class="casilla">
+        <input type="checkbox" id="acepta" name="acepta" required aria-describedby="error-acepta">
+        <label for="acepta">Acepto los términos y condiciones</label>
+      </div>
+      <p class="error" id="error-acepta" hidden>Marca la casilla para aceptar los términos.</p>
+
+      <fieldset class="pregunta" data-pregunta="puestaAPunto" aria-describedby="error-puestaAPunto">
+        <legend>¿Acepto que se realice una puesta a punto de Mi Bici?</legend>
+        <div class="opciones">
+          <label class="opcion"><input type="radio" name="puestaAPunto" value="si"> Sí</label>
+          <label class="opcion"><input type="radio" name="puestaAPunto" value="no"> No</label>
+        </div>
+        <p class="error" id="error-puestaAPunto" hidden>Elige Sí o No.</p>
+      </fieldset>
+
+      <fieldset class="pregunta" data-pregunta="cascoZapatillas" aria-describedby="error-cascoZapatillas">
+        <legend>¿Acepto el transporte de mi casco y zapatillas?</legend>
+        <div class="opciones">
+          <label class="opcion"><input type="radio" name="cascoZapatillas" value="si"> Sí</label>
+          <label class="opcion"><input type="radio" name="cascoZapatillas" value="no"> No</label>
+        </div>
+        <p class="error" id="error-cascoZapatillas" hidden>Elige Sí o No.</p>
+      </fieldset>
+
+      <fieldset class="pregunta" data-pregunta="lavado" aria-describedby="error-lavado">
+        <legend>¿Acepto que sea lavada mi Bici después del evento?</legend>
+        <div class="opciones">
+          <label class="opcion"><input type="radio" name="lavado" value="si"> Sí</label>
+          <label class="opcion"><input type="radio" name="lavado" value="no"> No</label>
+        </div>
+        <p class="error" id="error-lavado" hidden>Elige Sí o No.</p>
+      </fieldset>
+
+      <p class="error error-envio" data-campo="errorEnvio" role="alert" hidden></p>
+      <button type="submit" class="boton">Aceptar</button>
+    </form>
+  </template>
+
+  <template id="t-aceptado">
+    <div class="aceptado">
+      <h2>Tu aceptación</h2>
+      <p class="aceptado-fecha">Aceptaste el <time data-campo="fecha"></time><span data-campo="punto">.</span></p>
+      <dl class="respuestas" data-lista="respuestas"></dl>
+    </div>
+  </template>
+
+  <template id="t-gracias">
+    <section class="gracias" tabindex="-1">
+      <svg class="gracias-icono" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22"/><path d="M14 25l7 7 13-15"/></svg>
+      <p class="gracias-texto">Gracias por confiar en Tu Bici, nos vemos en Cartagena.</p>
+    </section>
+  </template>
+
+  <dialog class="visor" id="visor" aria-label="Foto ampliada">
+    <img alt="" id="visor-img">
+    <button class="boton boton-claro" type="button" data-accion="cerrar">Cerrar</button>
+  </dialog>
+</body>
+</html>
