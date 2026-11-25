@@ -18,7 +18,20 @@ Abre desde el link que el operador le manda por WhatsApp: `https://bici.tubicido
 | `config.js` | **Solo** la URL `/exec` de la Web App. Nunca la `API_KEY` |
 | `CNAME` | Dominio propio para GitHub Pages: `bici.tubicidondequieras.com` |
 | `404.html` | Página para rutas que no existen |
+| `privacidad/` | Política de Tratamiento de Datos (pública, sin scripts) |
 | `fuentes/` | Barlow Condensed Bold solo con los dígitos (5,6 KB) para el número del dorsal, y su licencia `OFL.txt` |
+
+## Versión 1.1
+
+- Debajo del M1 aparece cada momento **cerrado** (2 a 4) con su texto informativo, fotos (`verFoto`), comentarios y
+  su aceptación (`aceptarMomento`). Los textos salen de la hoja «Aceptación» del Sheet (`docs/hoja_aceptacion.tsv`).
+- M2: autorización de **Aliados** en una pregunta aparte, Sí/No sin valor por defecto (obligatoria; el No no impide aceptar).
+- M4: tras aceptar, texto de reseña y botón **Calificar en Google** (pestaña nueva, `rel="noopener"`), para todos.
+- Pie con **Política de Tratamiento de Datos** (`LINK_POLITICA`; si no llega, `privacidad/`).
+- `privacidad/index.html`: página pública e indexable, generada con `node herramientas/generar_politica.js "<fecha>"`
+  desde `docs/politica_datos.md`. No se edita a mano.
+- Con un backend 1.0 (sin `momentos`) o un link que solo tiene el M1, la página se ve igual que antes.
+- Publicar **después** de actualizar el Apps Script de producción (la página usa `aceptarMomento`).
 
 ## Estados de la página
 
@@ -52,7 +65,7 @@ no hace *preflight* de CORS, que Apps Script no soporta.
    ```bash
    cd web-atleta
    git init -b main
-   git add index.html styles.css app.js config.js CNAME 404.html README.md fuentes/
+   git add index.html styles.css app.js config.js CNAME 404.html README.md fuentes/ privacidad/
    git commit -m "Página del atleta"
    git remote add origin https://github.com/<usuario>/tubici-atleta.git
    git push -u origin main

@@ -12,9 +12,9 @@
   <title>Tu registro · Tu Bici</title>
   <link rel="icon" href="data:,">
   <!-- ?v=N: súbelo al cambiar estos archivos para que los navegadores no usen la versión en caché. -->
-  <link rel="stylesheet" href="styles.css?v=3">
-  <script src="config.js?v=4" defer></script>
-  <script src="app.js?v=3" defer></script>
+  <link rel="stylesheet" href="styles.css?v=4">
+  <script src="config.js?v=5" defer></script>
+  <script src="app.js?v=4" defer></script>
 </head>
 <body>
   <header class="barra">
@@ -82,7 +82,80 @@
       </section>
 
       <section class="bloque" data-zona="respuesta"></section>
+
+      <!-- v1.1: momentos 2 a 4 cerrados, en orden (app.js los agrega aquí). -->
+      <div data-zona="momentos"></div>
     </article>
+  </template>
+
+  <template id="t-momento">
+    <section class="momento">
+      <header class="momento-cabeza">
+        <p class="momento-etiqueta">Momento <span data-campo="n"></span></p>
+        <h2 data-campo="titulo"></h2>
+        <p class="momento-fecha"><time data-campo="fecha"></time></p>
+      </header>
+      <p class="informativo" data-campo="informativo"></p>
+      <div class="sub" data-si="fotos">
+        <h3>Fotos</h3>
+        <p class="nota">Cada foto lleva impreso el número y el consecutivo. Tócala para verla grande.</p>
+        <ul class="fotos" data-lista="fotos"></ul>
+      </div>
+      <div class="sub" data-si="comentarios">
+        <h3>Comentarios del operador</h3>
+        <p class="comentarios" data-campo="comentarios"></p>
+      </div>
+      <div class="sub" data-zona="respuesta"></div>
+    </section>
+  </template>
+
+  <template id="t-form-momento">
+    <form class="formulario" novalidate>
+      <h3>Tu confirmación</h3>
+      <p class="nota">Solo se puede enviar una vez.</p>
+      <div class="casilla casilla-texto">
+        <input type="checkbox" name="acepta" data-control="acepta">
+        <label data-campo="textoAceptacion"></label>
+      </div>
+      <p class="error" data-error="acepta" hidden>Marca la casilla para aceptar.</p>
+
+      <fieldset class="pregunta" data-pregunta="aliados" hidden>
+        <legend>Autorización para Aliados comerciales</legend>
+        <p class="aliados-texto" data-campo="textoAliados"></p>
+        <p class="nota">Elige Sí o No. Responder No no afecta tu entrega.
+          <a data-campo="linkPolitica" target="_blank" rel="noopener">Política de Tratamiento de Datos</a></p>
+        <div class="opciones">
+          <label class="opcion"><input type="radio" name="aliados" value="si"> Sí</label>
+          <label class="opcion"><input type="radio" name="aliados" value="no"> No</label>
+        </div>
+        <p class="error" data-error="aliados" hidden>Elige Sí o No.</p>
+      </fieldset>
+
+      <p class="error error-envio" data-campo="errorEnvio" role="alert" hidden></p>
+      <button type="submit" class="boton">Aceptar</button>
+    </form>
+  </template>
+
+  <template id="t-aceptado-momento">
+    <div class="aceptado">
+      <h3>Tu confirmación</h3>
+      <p class="aceptado-fecha">Aceptaste el <time data-campo="fecha"></time><span data-campo="punto">.</span></p>
+      <dl class="respuestas" data-lista="respuestas"></dl>
+    </div>
+  </template>
+
+  <template id="t-gracias-momento">
+    <section class="gracias" tabindex="-1">
+      <svg class="gracias-icono" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22"/><path d="M14 25l7 7 13-15"/></svg>
+      <p class="gracias-texto" data-campo="texto"></p>
+    </section>
+  </template>
+
+  <template id="t-resena">
+    <section class="resena">
+      <p class="resena-texto" data-campo="texto"></p>
+      <a class="boton boton-secundario" data-campo="link" target="_blank" rel="noopener">Calificar en Google</a>
+    </section>
   </template>
 
   <template id="t-formulario">
@@ -142,6 +215,10 @@
       <p class="gracias-texto">Gracias por confiar en Tu Bici, nos vemos en Cartagena.</p>
     </section>
   </template>
+
+  <footer class="pie">
+    <a id="link-politica" href="privacidad/" target="_blank" rel="noopener">Política de Tratamiento de Datos</a>
+  </footer>
 
   <dialog class="visor" id="visor" aria-label="Foto ampliada">
     <img alt="" id="visor-img">

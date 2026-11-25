@@ -1,5 +1,8 @@
 /*
  * Página del atleta (§8 de CLAUDE.md). Sin frameworks ni build.
+ * - v1.1: debajo del M1 muestra cada momento CERRADO (2 a 4) con su aceptación; en el M2, la
+ *   autorización de Aliados (Sí/No, sin valor por defecto); en el M4, la invitación a calificar en Google.
+ *   Con un backend 1.0 (sin "momentos") la página se ve igual que antes.
  * - El token viaja en location.hash: GitHub Pages nunca lo recibe.
  * - Todo texto del servidor se pinta con textContent (sin innerHTML con datos).
  * - Los POST van con Content-Type text/plain para evitar el preflight de CORS.
@@ -11,6 +14,7 @@
   var FORMATO_TOKEN = /^[A-Za-z0-9]{16}$/;
   var ZONA = 'America/Bogota';
   var MAX_DESCARGAS = 2; // fotos simultáneas (cada una ~200 KB en base64)
+  var POLITICA_LOCAL = 'privacidad/'; // misma página publicada junto a esta (si el servidor no manda el link)
 
   var contenido = document.getElementById('contenido');
   var token = leerToken();
@@ -88,6 +92,12 @@
     return new Intl.DateTimeFormat('es-CO', opciones).format(d);
   }
 
+  /** Solo enlaces https sin espacios ni comillas (vienen de la hoja «Aceptación»). */
+  function linkSeguro(v) {
+    var s = texto(v);
+    return /^https:\/\/[^\s"'<>\\]+$/.test(s) ? s : null;
+  }
+
   function pesos(valor) {
     var n = Number(texto(valor).replace(/[^\d]/g, ''));
     if (!n) return texto(valor);
@@ -153,7 +163,180 @@
     var zona = r.querySelector('[data-zona="respuesta"]');
     if (d.aceptacion && d.aceptacion.aceptado) zona.append(pintarAceptado(d.aceptacion));
     else zona.append(pintarFormulario(zona, d.versionTyc));
+
+    // v1.1: momentos 2 a 4 cerrados, en el orden que manda el servidor.
+    var politica = linkSeguro(d.linkPolitica) || POLITICA_LOCAL;
+    document.getElementById('link-politica').href = politica;
+    var zonaMomentos = r.querySelector('[data-zona="momentos"]');
+    (Array.isArray(d.momentos) ? d.momentos : []).forEach(function (m) {
+      if (m && [2, 3, 4].indexOf(m.momento) >= 0) zonaMomentos.append(pintarMomento(m, politica));
+    });
     return r;
+  }
+
+  // ------------------------------------------------------------------ Momentos 2 a 4 (v1.1)
+
+  function pintarMomento(m, politica) {
+    var s = clonar('t-momento');
+    var titulo = campo(s, 'titulo');
+    titulo.id = 'momento-' + m.momento + '-titulo';
+    titulo.textContent = texto(m.nombre);
+    s.setAttribute('aria-labelledby', titulo.id);
+    campo(s, 'n').textContent = String(m.momento);
+    var t = campo(s, 'fecha');
+    t.textContent = fecha(m.fecha, false);
+    t.dateTime = texto(m.fecha);
+    if (!t.textContent) t.parentElement.remove();
+
+    if (texto(m.informativo)) campo(s, 'informativo').textContent = texto(m.informativo);
+    else campo(s, 'informativo').remove();
+
+    var fotos = Array.isArray(m.fotos) ? m.fotos : [];
+    if (fotos.length) pintarFotos(s.querySelector('[data-lista="fotos"]'), fotos);
+    else s.querySelector('[data-si="fotos"]').remove();
+
+    if (texto(m.comentarios)) campo(s, 'comentarios').textContent = texto(m.comentarios);
+    else s.querySelector('[data-si="comentarios"]').remove();
+
+    var zona = s.querySelector('[data-zona="respuesta"]');
+    if (m.estado && m.estado.aceptado) {
+      zona.append(pintarAceptadoMomento(m, m.estado));
+      var resena = pintarResena(m);
+      if (resena) zona.append(resena);
+    } else if (m.aceptacion && texto(m.aceptacion.texto)) {
+      zona.append(pintarFormularioMomento(zona, m, politica));
+    } else {
+      zona.remove(); // Sin texto de aceptación en la hoja: solo se informa.
+    }
+    return s;
+  }
+
+  function pintarAceptadoMomento(m, est) {
+    var n = clonar('t-aceptado-momento');
+    var t = campo(n, 'fecha');
+    t.textContent = fecha(est.fecha, true);
+    t.dateTime = texto(est.fecha);
+    if (/\.$/.test(t.textContent)) campo(n, 'punto').remove();
+    var filas = [];
+    if (m.aceptacion && texto(m.aceptacion.texto)) filas.push([texto(m.aceptacion.texto), 'Sí']);
+    if (m.aliados && texto(m.aliados.texto) && (est.autorizaAliados === 'SI' || est.autorizaAliados === 'NO')) {
+      filas.push([texto(m.aliados.texto), est.autorizaAliados === 'SI' ? 'Sí' : 'No']);
+    }
+    llenarLista(n.querySelector('[data-lista="respuestas"]'), filas);
+    return n;
+  }
+
+  /** M4: invitación a calificar en Google para TODOS los que aceptan (sin filtrar por satisfacción). */
+  function pintarResena(m) {
+    var r = m.resenaGoogle;
+    var link = r && linkSeguro(r.link);
+    if (!link || !texto(r.texto)) return null;
+    var n = clonar('t-resena');
+    campo(n, 'texto').textContent = texto(r.texto);
+    campo(n, 'link').href = link;
+    return n;
+  }
+
+  function pintarFormularioMomento(zona, m, politica) {
+    var f = clonar('t-form-momento');
+    var sufijo = '-m' + m.momento;
+    var boton = f.querySelector('button[type="submit"]');
+    var errorEnvio = campo(f, 'errorEnvio');
+
+    var casilla = f.querySelector('[data-control="acepta"]');
+    var etiqueta = campo(f, 'textoAceptacion');
+    var errAcepta = f.querySelector('[data-error="acepta"]');
+    casilla.id = 'acepta' + sufijo;
+    etiqueta.htmlFor = casilla.id;
+    etiqueta.textContent = texto(m.aceptacion.texto);
+    errAcepta.id = 'error-acepta' + sufijo;
+    casilla.setAttribute('aria-describedby', errAcepta.id);
+
+    // M2: pregunta SEPARADA de Aliados, Sí o No, ninguna marcada por defecto.
+    var conAliados = !!(m.aliados && texto(m.aliados.texto));
+    var grupo = f.querySelector('[data-pregunta="aliados"]');
+    var errAliados = f.querySelector('[data-error="aliados"]');
+    if (conAliados) {
+      grupo.hidden = false;
+      campo(f, 'textoAliados').textContent = texto(m.aliados.texto);
+      campo(f, 'linkPolitica').href = politica;
+      errAliados.id = 'error-aliados' + sufijo;
+      grupo.setAttribute('aria-describedby', errAliados.id);
+    } else {
+      grupo.remove();
+    }
+
+    f.addEventListener('change', function (e) {
+      var err = e.target.name === 'aliados' ? errAliados : (e.target === casilla ? errAcepta : null);
+      if (err) err.hidden = true;
+      var g = e.target.closest('.pregunta, .casilla');
+      if (g) g.classList.remove('con-error');
+    });
+
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEnvio.hidden = true;
+      var primero = null;
+      if (!casilla.checked) {
+        errAcepta.hidden = false;
+        casilla.closest('.casilla').classList.add('con-error');
+        primero = casilla;
+      }
+      var aliados = null;
+      if (conAliados) {
+        var marcada = f.querySelector('input[name="aliados"]:checked');
+        if (marcada) aliados = marcada.value === 'si';
+        else {
+          errAliados.hidden = false;
+          grupo.classList.add('con-error');
+          primero = primero || grupo.querySelector('input');
+        }
+      }
+      if (primero) { primero.focus(); return; }
+
+      var cuerpo = {
+        action: 'aceptarMomento',
+        token: token,
+        momento: m.momento,
+        acepta: true,
+        // Versión del texto que el atleta leyó: si cambió mientras tanto, el servidor lo rechaza.
+        versionTexto: m.aceptacion.version
+      };
+      if (conAliados) {
+        cuerpo.autorizaAliados = aliados;
+        cuerpo.versionAliados = m.aliados.version;
+      }
+      boton.disabled = true;
+      boton.textContent = 'Enviando…';
+      apiPost(cuerpo)
+        .then(function (est) { terminarMomento(zona, m, est); })
+        .catch(function (err) {
+          var codigo = err instanceof ErrorApi ? err.codigo : '';
+          if (codigo === 'YA_ACEPTADO') return cargar(); // otra pestaña ya aceptó
+          if (codigo === 'TEXTO_CAMBIADO') {
+            alert(err.message); // El texto se actualizó: se recarga para mostrar el nuevo.
+            return cargar();
+          }
+          errorEnvio.textContent = codigo === 'DATOS_INVALIDOS' || codigo === 'MOMENTO_NO_CERRADO'
+            ? err.message
+            : 'No se pudo enviar tu confirmación. Revisa tu conexión y vuelve a intentarlo.';
+          errorEnvio.hidden = false;
+          boton.disabled = false;
+          boton.textContent = 'Aceptar';
+        });
+    });
+    return f;
+  }
+
+  function terminarMomento(zona, m, est) {
+    var gracias = clonar('t-gracias-momento');
+    campo(gracias, 'texto').textContent = texto(m.agradecimiento) || 'Gracias por confirmar.';
+    var nodos = [gracias, pintarAceptadoMomento(m, est)];
+    var resena = pintarResena(m);
+    if (resena) nodos.push(resena);
+    zona.replaceChildren.apply(zona, nodos);
+    gracias.focus();
+    gracias.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   }
 
   // ------------------------------------------------------------------ Fotos (carga diferida)
